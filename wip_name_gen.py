@@ -18,85 +18,90 @@ class DataHandler:
 
 
 class MarkovChain:
-	_bookend = '_'
-	_model = {}
-	_pad = None
+	__model = {}
 
 	def __init__(self, pad_length):
-		self.pad_length = pad_length
+		self.pad_util = MarkovUtility('_', pad_length)
 
 	def fit(self, data: []):
-		self._build_model(self._pad_data(data.copy()))
+		self.__build_model(self.pad_util.pad_data(data.copy()))
 
 	def generate(self):
-		result = self._bookend * self.pad_length
+		result = self.pad_util.get_pad()
 		start = 0
-		end = self.pad_length
+		end = self.pad_util.get_pad_length()
 		current = result[start:end]
 		previous = None
 
 		while True:
 			sel = 1 - random.random()
-			for kv in self._model[current].keys():
-				# print('current kv ', kv)
-				if sel > self._model[current][kv]:
-					sel -= self._model[current][kv]
+			for kv in self.__model[current].keys():
+				if sel > self.__model[current][kv]:
+					sel -= self.__model[current][kv]
 				else:
 					result += kv
-					previous = current
-					current = current[1:] + kv
+					previous = current = result[-(self.pad_util.get_pad_length()):]
 					break
 
-			if current == self._pad and previous is not self._pad and len(
-					result) > self.pad_length:
+			if current == self.pad_util.get_pad(
+			) and previous is not self.pad_util.get_pad() and len(
+					result) > self.pad_util.get_pad_length():
 				break
 
-		return self._strip_pad(result)
+		return self.pad_util.strip_pad(result)
 
-	def _pad_data(self, data):
-		self._pad = self._bookend * self.pad_length
-		for i, v in enumerate(data):
-			data[i] = self._pad + v + self._pad
-
-		return data
-
-	def _build_model(self, data):
+	def __build_model(self, data):
 		for item in data:
 			start = 0
-			end = self.pad_length
+			end = self.pad_util.get_pad_length()
 
 			while end < len(item):
 				c = item[start:end]
-				if c not in self._model:
-					self._model[c] = {item[end]: 1}
+				if c not in self.__model:
+					self.__model[c] = {item[end]: 1}
 				else:
-					if item[end] not in self._model[c]:
-						self._model[c][item[end]] = 1
+					if item[end] not in self.__model[c]:
+						self.__model[c][item[end]] = 1
 					else:
-						self._model[c][item[end]] += 1
+						self.__model[c][item[end]] += 1
 				start += 1
 				end += 1
 
-		for k in self._model.keys():
-			sub_total = sum(self._model[k].values())
-			for ky in self._model[k].keys():
-				self._model[k][ky] /= sub_total
+		for k in self.__model.keys():
+			sub_total = sum(self.__model[k].values())
+			for ky in self.__model[k].keys():
+				self.__model[k][ky] /= sub_total
 
-	def _strip_pad(self, text):
-		return text.replace(self._bookend, '')
+
+class MarkovUtility:
+	def __init__(self, pad_char, pad_length):
+		self.__pad_char = pad_char
+		self.__pad = self.__pad_char * pad_length
+
+	def get_pad(self):
+		return self.__pad
+
+	def get_pad_length(self):
+		return len(self.__pad)
+
+	def pad_data(self, data):
+		data = [self.__pad + x + self.__pad for x in data]
+		return data
+
+	def strip_pad(self, text):
+		return text.replace(self.__pad_char, '')
 
 
 if __name__ == "__main__":
 	dh = DataHandler()
-	mc = MarkovChain(4)
+	mc = MarkovChain(5)
 	the_list = dh.get_list()
-	
+
 	mc.fit(data=the_list)
-	for _ in range(10):
+	for _ in range(20):
 		title = mc.generate()
 		if title not in the_list:
 			print(title)
 		else:
-			print('*', title)
-			
+			print('Title in list -> ', title)
 
