@@ -23,10 +23,7 @@ class MarkovChain:
 	def __init__(self, pad_length):
 		self.pad_util = MarkovUtility('_', pad_length)
 
-	def fit(self, data: []):
-		self.__build_model(self.pad_util.pad_data(data.copy()))
-
-	def generate(self):
+	def transform(self):
 		result = self.pad_util.get_pad()
 		start = 0
 		end = self.pad_util.get_pad_length()
@@ -50,7 +47,8 @@ class MarkovChain:
 
 		return self.pad_util.strip_pad(result)
 
-	def __build_model(self, data):
+	def fit(self, list):
+		data = self.pad_util.pad_data(list.copy())
 		for item in data:
 			start = 0
 			end = self.pad_util.get_pad_length()
@@ -97,9 +95,9 @@ if __name__ == "__main__":
 	mc = MarkovChain(5)
 	the_list = dh.get_list()
 
-	mc.fit(data=the_list)
+	mc.fit(the_list)
 	for _ in range(20):
-		title = mc.generate()
+		title = mc.transform()
 		if title not in the_list:
 			print(title)
 		else:
